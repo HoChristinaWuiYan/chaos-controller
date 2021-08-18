@@ -46,8 +46,8 @@ var (
 	ms                  metrics.Sink
 	sink                string
 	level               string
-	containerIDs        []string
-	podIP               string
+	targetContainerIDs  []string
+	targetPodIP         string
 	disruptionName      string
 	disruptionNamespace string
 	targetName          string
@@ -72,8 +72,8 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&dryRun, "dry-run", false, "Enable dry-run mode")
 	rootCmd.PersistentFlags().StringVar(&sink, "metrics-sink", "noop", "Metrics sink (datadog, or noop)")
 	rootCmd.PersistentFlags().StringVar(&level, "level", "", "Level of injection (either pod or node)")
-	rootCmd.PersistentFlags().StringSliceVar(&containerIDs, "containers-id", []string{}, "Targeted containers ID")
-	rootCmd.PersistentFlags().StringVar(&podIP, "pod-ip", "", "Pod IP of targeted pod")
+	rootCmd.PersistentFlags().StringSliceVar(&targetContainerIDs, "target-containers-id", []string{}, "Targeted containers ID")
+	rootCmd.PersistentFlags().StringVar(&targetPodIP, "target-pod-ip", "", "Pod IP of targeted pod")
 	rootCmd.PersistentFlags().BoolVar(&onInit, "on-init", false, "Apply the disruption on initialization, requiring a synchronization with the chaos-handler container")
 
 	// log context args
@@ -150,13 +150,13 @@ func initConfig() {
 	switch level {
 	case chaostypes.DisruptionLevelPod:
 		// check for container ID flag
-		if len(containerIDs) == 0 {
-			log.Error("--containers-id flag must be passed when --level=pod")
+		if len(targetContainerIDs) == 0 {
+			log.Error("--target-containers-id flag must be passed when --level=pod")
 
 			return
 		}
 
-		for _, containerID := range containerIDs {
+		for _, containerID := range targetContainerIDs {
 			// retrieve container info
 			ctn, err := container.New(containerID)
 			if err != nil {
@@ -181,8 +181,8 @@ func initConfig() {
 		}
 
 		// check for pod IP flag
-		if podIP == "" {
-			log.Error("--pod-ip flag must be passed when --level=pod")
+		if targetPodIP == "" {
+			log.Error("--target-pod-ip flag must be passed when --level=pod")
 
 			return
 		}
@@ -239,16 +239,16 @@ func initConfig() {
 
 	for i, ctn := range ctns {
 		config := injector.Config{
-			DryRun:      dryRun,
-			OnInit:      onInit,
-			Log:         log,
-			MetricsSink: ms,
-			Level:       chaostypes.DisruptionLevel(level),
-			Container:   ctn,
-			PodIP:       podIP,
-			Cgroup:      cgroupMgrs[i],
-			Netns:       netnsMgrs[i],
-			K8sClient:   clientset,
+			DryRun:          dryRun,
+			OnInit:          onInit,
+			Log:             log,
+			MetricsSink:     ms,
+			Level:           chaostypes.DisruptionLevel(level),
+			TargetContainer: ctn,
+			TargetPodIP:     targetPodIP,
+			Cgroup:          cgroupMgrs[i],
+			Netns:           netnsMgrs[i],
+			K8sClient:       clientset,
 		}
 
 		configs = append(configs, config)
