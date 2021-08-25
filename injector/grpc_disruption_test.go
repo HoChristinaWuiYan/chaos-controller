@@ -128,7 +128,7 @@ func TestSendDisruption(t *testing.T) {
 		&emptypb.Empty{},
 	).Return(&emptypb.Empty{}, nil)
 
-	// instatiate & make calls
+	// instantiate & make calls
 	inj, err := NewGRPCDisruptionInjector(spec, config, disruptionListenerClient)
 	Expect(err).To(BeNil())
 
