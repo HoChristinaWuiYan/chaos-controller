@@ -127,8 +127,9 @@ var _ = Describe("Disruption Controller", func() {
 				Namespace: "default",
 			},
 			Spec: chaosv1beta1.DisruptionSpec{
-				Selector:   map[string]string{"foo": "bar"},
-				Containers: []string{"ctn1", "ctn2"},
+				Selector:        map[string]string{"foo": "bar"},
+				Containers:      []string{"ctn1", "ctn2"},
+				DurationSeconds: 3600,
 				NodeFailure: &chaosv1beta1.NodeFailureSpec{
 					Shutdown: false,
 				},
