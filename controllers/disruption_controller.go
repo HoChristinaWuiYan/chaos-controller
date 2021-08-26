@@ -342,7 +342,7 @@ func (r *DisruptionReconciler) startInjection(instance *chaosv1beta1.Disruption)
 
 				// send metrics and events
 				r.Recorder.Event(instance, "Normal", "Created", fmt.Sprintf("Created disruption injection pod for \"%s\"", instance.Name))
-				r.recordEventOnTarget(instance, target, "Warning", "Disrupted", fmt.Sprintf("Pod %s from disruption %s targeted this resourcer for injection", chaosPod.Name, instance.Name))
+				r.recordEventOnTarget(instance, target, "Warning", "Disrupted", fmt.Sprintf("Pod %s from disruption %s targeted this resource for injection", chaosPod.Name, instance.Name))
 				r.handleMetricSinkError(r.MetricsSink.MetricPodsCreated(target, instance.Name, instance.Namespace, true))
 			} else {
 				var chaosPodNames []string
