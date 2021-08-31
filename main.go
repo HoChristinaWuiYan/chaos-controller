@@ -37,6 +37,8 @@ import (
 	"github.com/DataDog/chaos-controller/log"
 	"github.com/DataDog/chaos-controller/metrics"
 	"github.com/DataDog/chaos-controller/metrics/types"
+	"github.com/DataDog/chaos-controller/notifier"
+	notifiertypes "github.com/DataDog/chaos-controller/notifier/types"
 	chaoswebhook "github.com/DataDog/chaos-controller/webhook"
 	"github.com/spf13/viper"
 	// +kubebuilder:scaffold:imports
@@ -62,6 +64,7 @@ type config struct {
 type controllerConfig struct {
 	MetricsAddr      string                  `json:"metricsAddr"`
 	MetricsSink      string                  `json:"metricsSink"`
+	NotifierDriver   string                  `json:"notifierDriver"`
 	ImagePullSecrets string                  `json:"imagePullSecrets"`
 	DeleteOnly       bool                    `json:"deleteOnly"`
 	LeaderElection   bool                    `json:"leaderElection"`
@@ -120,6 +123,9 @@ func main() {
 
 	pflag.StringVar(&cfg.Controller.MetricsSink, "metrics-sink", "noop", "Metrics sink (datadog, or noop)")
 	handleFatalError(viper.BindPFlag("controller.metricsSink", pflag.Lookup("metrics-sink")))
+
+	pflag.StringVar(&cfg.Controller.NotifierDriver, "notifier-driver", "noop", "Driver for notification system (noop or slack)")
+	handleFatalError(viper.BindPFlag("controller.NotifierDriver", pflag.Lookup("notifier-driver")))
 
 	pflag.StringToStringVar(&cfg.Injector.Annotations, "injector-annotations", map[string]string{}, "Annotations added to the generated injector pods")
 	handleFatalError(viper.BindPFlag("injector.annotations", pflag.Lookup("injector-annotations")))
@@ -207,12 +213,24 @@ func main() {
 		logger.Errorw("error sending MetricRestart", "sink", ms.GetSinkName())
 	}
 
+	// notifier driver setup
+	notifier, err := notifier.GetNotifier(notifiertypes.NotifierDriver(cfg.Controller.NotifierDriver))
+	if err != nil {
+		logger.Errorw("error while creating notifier", "error", err)
+	}
+
 	// handle metrics sink client close on exit
 	defer func() {
 		logger.Infow("closing metrics sink client before exiting", "sink", ms.GetSinkName())
 
 		if err := ms.Close(); err != nil {
 			logger.Errorw("error closing metrics sink client", "sink", ms.GetSinkName(), "error", err)
+		}
+
+		logger.Infow("closing notifier client before exiting", "notifier", notifier.GetNotifierName())
+
+		if err := notifier.Clean(); err != nil {
+			logger.Errorw("error closing notifier client", "notifier", notifier.GetNotifierName(), "error", err)
 		}
 	}()
 
@@ -223,6 +241,7 @@ func main() {
 		Scheme:                                mgr.GetScheme(),
 		Recorder:                              mgr.GetEventRecorderFor("disruption-controller"),
 		MetricsSink:                           ms,
+		NotifierClient:                        notifier,
 		TargetSelector:                        controllers.RunningTargetSelector{},
 		InjectorAnnotations:                   cfg.Injector.Annotations,
 		InjectorServiceAccount:                cfg.Injector.ServiceAccount.Name,
