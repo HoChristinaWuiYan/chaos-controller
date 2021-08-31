@@ -184,6 +184,7 @@ var _ = BeforeSuite(func(done Done) {
 		InjectorImage:                   "chaos-injector",
 		InjectorServiceAccount:          "chaos-injector",
 		InjectorServiceAccountNamespace: "default",
+		ExpiredDisruptionGCDelay:        10,
 	}).SetupWithManager(k8sManager)
 	Expect(err).ToNot(HaveOccurred())
 

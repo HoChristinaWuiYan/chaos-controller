@@ -51,8 +51,7 @@ import (
 )
 
 const (
-	finalizerPrefix          = "finalizer.chaos.datadoghq.com"
-	ExpiredDisruptionGCDelay = -900 // 15 minutes, measured in seconds
+	finalizerPrefix = "finalizer.chaos.datadoghq.com"
 )
 
 var (
@@ -75,6 +74,7 @@ type DisruptionReconciler struct {
 	log                                   *zap.SugaredLogger
 	InjectorServiceAccountNamespace       string
 	InjectorNetworkDisruptionAllowedHosts []string
+	ExpiredDisruptionGCDelay              int64
 }
 
 // +kubebuilder:rbac:groups=chaos.datadoghq.com,resources=disruptions,verbs=get;list;watch;create;update;patch;delete
@@ -168,9 +168,9 @@ func (r *DisruptionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 		// the injection is being created or modified, apply needed actions
 		controllerutil.AddFinalizer(instance, disruptionFinalizer)
 
-		if calculateRemainingDurationSeconds(*instance) <= ExpiredDisruptionGCDelay {
+		if calculateRemainingDurationSeconds(*instance) <= r.ExpiredDisruptionGCDelay {
 			r.log.Infow("disruption has lived for more than its duration, it will now be deleted.", "durationSeconds", instance.Spec.DurationSeconds)
-			r.Recorder.Event(instance, "Normal", "DurationOver", fmt.Sprintf("The disruption has lived %d seconds longer than its specified duration, and will now be deleted.", ExpiredDisruptionGCDelay))
+			r.Recorder.Event(instance, "Normal", "DurationOver", fmt.Sprintf("The disruption has lived %d seconds longer than its specified duration, and will now be deleted.", r.ExpiredDisruptionGCDelay))
 
 			var err error
 
