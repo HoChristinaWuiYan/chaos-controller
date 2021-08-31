@@ -60,12 +60,13 @@ type config struct {
 }
 
 type controllerConfig struct {
-	MetricsAddr      string                  `json:"metricsAddr"`
-	MetricsSink      string                  `json:"metricsSink"`
-	ImagePullSecrets string                  `json:"imagePullSecrets"`
-	DeleteOnly       bool                    `json:"deleteOnly"`
-	LeaderElection   bool                    `json:"leaderElection"`
-	Webhook          controllerWebhookConfig `json:"webhook"`
+	MetricsAddr              string                  `json:"metricsAddr"`
+	MetricsSink              string                  `json:"metricsSink"`
+	ImagePullSecrets         string                  `json:"imagePullSecrets"`
+	ExpiredDisruptionGCDelay int                     `json:"expiredDisruptionGCDelay"`
+	DeleteOnly               bool                    `json:"deleteOnly"`
+	LeaderElection           bool                    `json:"leaderElection"`
+	Webhook                  controllerWebhookConfig `json:"webhook"`
 }
 
 type controllerWebhookConfig struct {
@@ -117,6 +118,9 @@ func main() {
 
 	pflag.StringVar(&cfg.Controller.ImagePullSecrets, "image-pull-secrets", "", "Secrets used for pulling the Docker image from a private registry")
 	handleFatalError(viper.BindPFlag("controller.imagePullSecrets", pflag.Lookup("image-pull-secrets")))
+
+	pflag.IntVar(&cfg.Controller.ExpiredDisruptionGCDelay, "expired-disruption-gc-delay", 300, "Seconds after a disruption expires before being automatically deleted")
+	handleFatalError(viper.BindPFlag("controller.expiredDisruptionGCDelay", pflag.Lookup("expired-disruption-gc-delay")))
 
 	pflag.StringVar(&cfg.Controller.MetricsSink, "metrics-sink", "noop", "Metrics sink (datadog, or noop)")
 	handleFatalError(viper.BindPFlag("controller.metricsSink", pflag.Lookup("metrics-sink")))
@@ -230,7 +234,7 @@ func main() {
 		InjectorServiceAccountNamespace:       cfg.Injector.ServiceAccount.Namespace,
 		InjectorNetworkDisruptionAllowedHosts: cfg.Injector.NetworkDisruption.AllowedHosts,
 		ImagePullSecrets:                      cfg.Controller.ImagePullSecrets,
-		ExpiredDisruptionGCDelay:              -900, // 15 minutes, measured in seconds
+		ExpiredDisruptionGCDelay:              cfg.Controller.ExpiredDisruptionGCDelay,
 	}
 
 	if err := r.SetupWithManager(mgr); err != nil {
