@@ -221,6 +221,7 @@ func (r *DisruptionReconciler) Reconcile(req ctrl.Request) (ctrl.Result, error) 
 			},
 			r.Update(context.Background(), instance)
 	}
+
 	// stop the reconcile loop, there's nothing else to do
 	return ctrl.Result{}, nil
 }
