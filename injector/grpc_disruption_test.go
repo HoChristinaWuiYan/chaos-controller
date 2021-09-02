@@ -24,6 +24,7 @@ import (
 	"testing"
 
 	"github.com/DataDog/chaos-controller/api/v1beta1"
+	"github.com/DataDog/chaos-controller/grpc"
 	. "github.com/DataDog/chaos-controller/injector"
 
 	pb "github.com/DataDog/chaos-controller/grpc/disruption_listener"
@@ -33,7 +34,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func TestSendDisruption(t *testing.T) {
+func TestSendAndCleaDisruption(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "gRPC Disruption Suite - Send Disruption")
 
@@ -67,13 +68,13 @@ func TestSendDisruption(t *testing.T) {
 			},
 		},
 	}
-
-	config := GRPCDisruptionInjectorConfig{
-		Config: Config{
-			Log: log,
-		},
-	}
-
+	/*
+		config := GRPCDisruptionInjectorConfig{
+			Config: Config{
+				Log: log,
+			},
+		}
+	*/
 	disruptionListenerClient := &DisruptionListenerClientMock{}
 
 	// define expectations
@@ -129,11 +130,13 @@ func TestSendDisruption(t *testing.T) {
 	).Return(&emptypb.Empty{}, nil)
 
 	// instantiate & make calls
-	inj, err := NewGRPCDisruptionInjector(spec, config, disruptionListenerClient)
-	Expect(err).To(BeNil())
+	//	inj, err := NewGRPCDisruptionInjector(spec, config)
+	//	Expect(err).To(BeNil())
 
-	Expect(inj.Inject()).To(BeNil())
-	Expect(inj.Clean()).To(BeNil())
+	grpc.ExecuteSendDisruption(disruptionListenerClient, spec)
+	grpc.ExecuteCleanDisruption(disruptionListenerClient)
+	////	Expect(inj.Inject()).To(BeNil())
+	//	Expect(inj.Clean()).To(BeNil())
 
 	// run test
 	disruptionListenerClient.AssertExpectations(t)
