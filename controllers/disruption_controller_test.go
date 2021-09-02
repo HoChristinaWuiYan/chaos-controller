@@ -23,6 +23,7 @@ package controllers
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
@@ -127,9 +128,9 @@ var _ = Describe("Disruption Controller", func() {
 				Namespace: "default",
 			},
 			Spec: chaosv1beta1.DisruptionSpec{
-				Selector:        map[string]string{"foo": "bar"},
-				Containers:      []string{"ctn1", "ctn2"},
-				DurationSeconds: 3600,
+				Selector:   map[string]string{"foo": "bar"},
+				Containers: []string{"ctn1", "ctn2"},
+				Duration:   time.Hour,
 				NodeFailure: &chaosv1beta1.NodeFailureSpec{
 					Shutdown: false,
 				},
@@ -194,7 +195,7 @@ var _ = Describe("Disruption Controller", func() {
 	Context("disruption expires naturally", func() {
 		BeforeEach(func() {
 			disruption.Spec.Count = &intstr.IntOrString{Type: intstr.String, StrVal: "100%"}
-			disruption.Spec.DurationSeconds = int64(timeout.Seconds() + 5)
+			disruption.Spec.Duration = time.Second * 5
 		})
 
 		It("should target all the selected pods", func() {
