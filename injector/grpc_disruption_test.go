@@ -68,13 +68,7 @@ func TestSendAndCleaDisruption(t *testing.T) {
 			},
 		},
 	}
-	/*
-		config := GRPCDisruptionInjectorConfig{
-			Config: Config{
-				Log: log,
-			},
-		}
-	*/
+
 	disruptionListenerClient := &DisruptionListenerClientMock{}
 
 	// define expectations
@@ -129,14 +123,8 @@ func TestSendAndCleaDisruption(t *testing.T) {
 		&emptypb.Empty{},
 	).Return(&emptypb.Empty{}, nil)
 
-	// instantiate & make calls
-	//	inj, err := NewGRPCDisruptionInjector(spec, config)
-	//	Expect(err).To(BeNil())
-
 	grpc.ExecuteSendDisruption(disruptionListenerClient, spec)
 	grpc.ExecuteCleanDisruption(disruptionListenerClient)
-	////	Expect(inj.Inject()).To(BeNil())
-	//	Expect(inj.Clean()).To(BeNil())
 
 	// run test
 	disruptionListenerClient.AssertExpectations(t)
