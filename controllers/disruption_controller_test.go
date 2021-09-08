@@ -219,7 +219,7 @@ var _ = Describe("Disruption Controller", func() {
 
 		It("should target all the selected pods", func() {
 			By("Ensuring that the chaos pods have been created")
-			Eventually(func() error { return expectChaosPod(disruption, 24) }, timeout).Should(Succeed())
+			Eventually(func() error { return expectChaosPod(disruption, 12) }, timeout).Should(Succeed())
 
 			By("Ensuring that the chaos pods have correct number of targeted containers")
 			Expect(expectChaosInjectors(disruption, 2)).To(BeNil())
